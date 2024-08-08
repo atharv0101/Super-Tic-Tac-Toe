@@ -1,148 +1,207 @@
 #include <iostream>
 using namespace std;
 
-void display(char A[10], char B[10], char C[10], char D[10], char E[10], char F[10], char G[10], char H[10], char I[10]) {
+const char PLAYER_X = 'X';
+const char PLAYER_O = 'O';
+const char EMPTY = ' ';
+const char *COLOR_RESET = "\033[0m";
+const char *COLOR_X = "\033[1;31m"; // Red
+const char *COLOR_O = "\033[1;34m"; // Blue
+
+// Function prototypes
+void display(char board[9][9], char BigBox[9]);
+char checkWin(char board[9]);
+void updateBigBox(char BigBox[9], char smallBoards[9][9]);
+bool isBoardFull(char board[9]);
+void Input(char smallBoards[9][9], char& player, int& nextBoard, char BigBox[9]);
+bool isBigBoardFull(char BigBox[9]);
+
+// Display the Super Tic Tac Toe board
+void display(char board[9][9], char BigBox[9]) {
     for (int i = 0; i < 9; i += 3) {
-        cout << A[i] << " |" << A[i + 1] << " |" << A[i + 2] << " ||" << B[i] << " |" << B[i + 1] << " |" << B[i + 2] << " ||" << C[i] << " |" << C[i + 1] << " |" << C[i + 2] << endl;
-        cout << "--------||--------||--------" << endl;
+        for (int row = 0; row < 3; ++row) {
+            for (int j = 0; j < 3; ++j) {
+                int boardIndex = i + j;
+                int startIndex = row * 3;
+
+                // Check if the board is won
+                if (BigBox[boardIndex] != EMPTY) {
+                    char winner = BigBox[boardIndex];
+                    for (int col = 0; col < 3; ++col) {
+                        cout << (winner == PLAYER_X ? COLOR_X : COLOR_O) << " " << winner << " " << COLOR_RESET;
+                        if (col < 2) cout << " "; // Add extra space between cells
+                    }
+                } else {
+                    // Display the normal board cells
+                    for (int col = 0; col < 3; ++col) {
+                        char cell = board[boardIndex][startIndex + col];
+                        if (cell == PLAYER_X) {
+                            cout << COLOR_X << " " << cell << " " << COLOR_RESET;
+                        } else if (cell == PLAYER_O) {
+                            cout << COLOR_O << " " << cell << " " << COLOR_RESET;
+                        } else {
+                            cout << " " << "-" << " ";
+                        }
+                        if (col < 2) cout << " "; // Add extra space between cells
+                    }
+                }
+                if (j < 2) cout << "     "; // Add horizontal space between small boards
+            }
+            cout << endl;
+        }
+        if (i < 6) cout << endl; // Add vertical space between rows of small boards
     }
-    cout<<"--------||--------||--------" <<endl;
-    for (int i = 0; i < 9; i += 3) {
-        cout << D[i] << " |" << D[i + 1] << " |" << D[i + 2] << " ||" << E[i] << " |" << E[i + 1] << " |" << E[i + 2] << " ||" << F[i] << " |" << F[i + 1] << " |" << F[i + 2] << endl;
-        cout << "--------||--------||--------" << endl;
+    cout << "Big Board Status: ";
+    for (int i = 0; i < 9; ++i) {
+        if (BigBox[i] == PLAYER_X) {
+            cout << COLOR_X << BigBox[i] << COLOR_RESET << " ";
+        } else if (BigBox[i] == PLAYER_O) {
+            cout << COLOR_O << BigBox[i] << COLOR_RESET << " ";
+        } else {
+            cout << BigBox[i] << " ";
+        }
     }
-    cout<<"--------||--------||--------" <<endl;
+    cout << endl;
+}
+
+// Check for a winner on a small board
+char checkWin(char board[9]) {
+    // Check rows
     for (int i = 0; i < 9; i += 3) {
-        cout << G[i] << " |" << G[i + 1] << " |" << G[i + 2] << " ||" << H[i] << " |" << H[i + 1] << " |" << H[i + 2] << " ||" << I[i] << " |" << I[i + 1] << " |" << I[i + 2] << endl;
-        if(i<=5){
-            cout << "--------||--------||--------" << endl;
+        if (board[i] != EMPTY && board[i] == board[i + 1] && board[i + 1] == board[i + 2]) {
+            return board[i];
+        }
+    }
+    // Check columns
+    for (int i = 0; i < 3; ++i) {
+        if (board[i] != EMPTY && board[i] == board[i + 3] && board[i + 3] == board[i + 6]) {
+            return board[i];
+        }
+    }
+    // Check diagonals
+    if (board[0] != EMPTY && board[0] == board[4] && board[4] == board[8]) {
+        return board[0];
+    }
+    if (board[2] != EMPTY && board[2] == board[4] && board[4] == board[6]) {
+        return board[2];
+    }
+    return EMPTY;
+}
+
+// Check if a small board is full
+bool isBoardFull(char board[9]) {
+    for (int i = 0; i < 9; ++i) {
+        if (board[i] == EMPTY) return false;
+    }
+    return true;
+}
+
+// Update the status of the BigBox based on the small boards
+void updateBigBox(char BigBox[9], char smallBoards[9][9]) {
+    for (int i = 0; i < 9; ++i) {
+        if (BigBox[i] == EMPTY) {
+            BigBox[i] = checkWin(smallBoards[i]);
         }
     }
 }
 
-char checkWin(char board[10]) {
-    // Check rows, columns, and diagonals
-    for (int i = 0; i < 3; i++) {
-        if (board[i] != ' ' && board[i] == board[i + 3] && board[i + 3] == board[i + 6]) {
-            return board[i]; // column win
-        }
-        if (board[i * 3] != ' ' && board[i * 3] == board[i * 3 + 1] && board[i * 3 + 1] == board[i * 3 + 2]) {
-            return board[i * 3]; // Row win
-        }
+// Check if the entire big board is full
+bool isBigBoardFull(char BigBox[9]) {
+    for (int i = 0; i < 9; ++i) {
+        if (BigBox[i] == EMPTY) return false;
     }
-    if (board[4] != ' ' && board[0] == board[4] && board[4] == board[8]) {
-        return board[4]; // Diagonal win
-    }
-    if (board[4] != ' ' && board[2] == board[4] && board[4] == board[6]) {
-        return board[4]; // Diagonal win
-    }
-    return 'c'; // 'c' represents the game is ongoing
+    return true;
 }
 
-char CheckSmallBoardWin(char board[]) {
-    return checkWin(board);
+// Handle player input and update the board
+void Input(char smallBoards[9][9], char& player, int& nextBoard, char BigBox[9]) {
+    int boardChoice, cellChoice;
+    int tries = 0;
+    const int MAX_TRIES = 5;
+    while (true) {
+        if (nextBoard == -1) {
+            cout << "Select the board number (1-9): ";
+            cin >> boardChoice;
+            boardChoice--; // Adjust for 0-based indexing
+        } else {
+            boardChoice = nextBoard;
+            cout << "Playing in board " << boardChoice + 1 << endl; // Show the board being played
+        }
+
+        // Check if the selected board is valid
+        if (boardChoice >= 0 && boardChoice < 9 && BigBox[boardChoice] == EMPTY) {
+            cout << "Select the cell number (1-9) in board " << boardChoice + 1 << ": ";
+            cin >> cellChoice;
+            cellChoice--; // Adjust for 0-based indexing
+
+            // Check if the selected cell is valid
+            if (cellChoice >= 0 && cellChoice < 9 && smallBoards[boardChoice][cellChoice] == EMPTY) {
+                smallBoards[boardChoice][cellChoice] = player;
+                nextBoard = cellChoice;
+                break;
+            } else {
+                cout << "Invalid cell choice, try again." << endl;
+            }
+        } else {
+            cout << "Invalid board choice, try again." << endl;
+        }
+
+        // Prevent infinite loop by breaking after MAX_TRIES
+        if (++tries >= MAX_TRIES) {
+            cout << "Too many invalid attempts. Please restart the game." << endl;
+            exit(1);
+        }
+    }
 }
 
-void CheckBigBoardWin(char BigBox[9]) {
+// Check if the game is over
+bool checkGameOver(char BigBox[9], char smallBoards[9][9]) {
+    // Check if the big board has a winner
     char winner = checkWin(BigBox);
-    if (winner == 'X'){
-        cout<<"Player X wins";
+    if (winner != EMPTY) {
+        cout << "Player " << winner << " wins the game!" << endl;
+        return true;
     }
-    else if (winner == 'O'){
-        cout<<"Player O wins";
-    }
-    else{
-        cout<<"Continue the game"<<endl;
-    }
-}
-
-void Input(char A[10], char B[10], char C[10], char D[10], char E[10], char F[10], char G[10], char H[10], char I[10], char player) {
-    int box;
-    int place;
-    cout << "Select the Box:";
-    cin >> box;
-    cout << "Select the Place:";
-    cin >> place;
-
-    // Fix the switch cases to correctly set the values in the corresponding board.
-    char* currentBoard;
-    switch (box) {
-    case 1:
-        currentBoard = A;
-        break;
-    case 2:
-        currentBoard = B;
-        break;
-    case 3:
-        currentBoard = C;
-        break;
-    case 4:
-        currentBoard = D;
-        break;
-    case 5:
-        currentBoard = E;
-        break;
-    case 6:
-        currentBoard = F;
-        break;
-    case 7:
-        currentBoard = G;
-        break;
-    case 8:
-        currentBoard = H;
-        break;
-    case 9:
-        currentBoard = I;
-        break;
-    default:
-        cout << "Invalid Entry. Enter Value between 1 to 9" << endl;
-        return;
-    }
-
-    // Check if the place is already occupied
-    if (currentBoard[place - 1] == ' ') {
-        currentBoard[place - 1] = player;
-    }
-    else {
-        cout << "Place is already occupied!" << endl;
-        return;
+    // Check if the big board is full
+    else if (isBigBoardFull(BigBox)) {
+        cout << "The game is a draw!" << endl;
+        return true;
+    } else {
+        updateBigBox(BigBox, smallBoards);
+        return false;
     }
 }
 
 int main() {
-    cout<<"Welcome to the SUPER TIC TAC TOE"<<endl;
-    cout<<endl;
-    char A[10], B[10], C[10], D[10], E[10], F[10], G[10], H[10], I[10];
+    cout << "Welcome to the SUPER TIC TAC TOE" << endl;
+    cout << endl;
 
-    // Initialize the boards...
-    for (int i = 0; i < 10; i++) {
-        A[i] = ' ';
-        B[i] = ' ';
-        C[i] = ' ';
-        D[i] = ' ';
-        E[i] = ' ';
-        F[i] = ' ';
-        G[i] = ' ';
-        H[i] = ' ';
-        I[i] = ' ';
+    char smallBoards[9][9];
+    char BigBox[9] = { EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY };
+
+    // Initialize the boards
+    for (int i = 0; i < 9; i++) {
+        for (int j = 0; j < 9; j++) {
+            smallBoards[i][j] = EMPTY;
+        }
     }
 
-    display(A, B, C, D, E, F, G, H, I);
+    char currentPlayer = PLAYER_X; // Initialize with 'X'
+    bool gameOver = false;
+    int nextBoard = -1; // Initially, the player can choose any board
 
-    char currentPlayer = 'X'; // Initialize with 'X'
-
-    while (true) {
-        cout << "Player " << currentPlayer << "'s turn:" << endl;
-        Input(A, B, C, D, E, F, G, H, I, currentPlayer);
-        display(A, B, C, D, E, F, G, H, I);
-        char result = CheckSmallBoardWin(A);
-
-        if (result == 'X' || result == 'O') {
-            cout << "Player " << result << " wins!" << endl;
-            break;
+    while (!gameOver) {
+        display(smallBoards, BigBox);
+        cout << "Player " << (currentPlayer == PLAYER_X ? "X" : "O") << "'s turn:" << endl;
+        Input(smallBoards, currentPlayer, nextBoard, BigBox);
+        updateBigBox(BigBox, smallBoards);
+        gameOver = checkGameOver(BigBox, smallBoards);
+        if (!gameOver) {
+            currentPlayer = (currentPlayer == PLAYER_X) ? PLAYER_O : PLAYER_X; // Switch players
+            if (nextBoard != -1 && (isBoardFull(smallBoards[nextBoard]) || BigBox[nextBoard] != EMPTY)) {
+                nextBoard = -1; // Allow player to choose any board if the target board is full or closed
+            }
         }
-
-        currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
     }
 
     return 0;
